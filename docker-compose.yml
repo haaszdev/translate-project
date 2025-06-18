@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-project
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  mongo:
+    image: mongo
+    container_name: mongo-project
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  translation-api:
+    build: ./translation-api
+    container_name: translation-api
+    ports:
+      - "${PORT}:3000"
+    environment:
+      - PORT=${PORT}
+      - MONGO_URI=${MONGO_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  translation-worker:
+    build: ./translation-worker
+    container_name: translation-worker
+    environment:
+      - MONGO_URI=${MONGO_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+    depends_on:
+      - rabbitmq
+      - mongo
+
+volumes:
+  mongo_data:
